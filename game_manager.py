@@ -1,4 +1,6 @@
 import json
+import time
+
 
 class GameManager:
     def __init__(self, agent):
@@ -58,8 +60,13 @@ class GameManager:
                 print("The party is comming")
                 while True:
                     response = self.agent.is_turn()
-                    if response == 1:
+                    if response == "Es su turno":
                         print("My turn")
+                        self.agent.play_turn()
+                        time.sleep(10)
+                        self.agent.decide_to_continue_or_stop()
+                        time.sleep(10)
+
             self.show_menu()
             choice = input("Select an option: ")
             if choice in options:

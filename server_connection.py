@@ -37,8 +37,7 @@ class ServerConnection:
     def player_in_party(self, game_id):
         response = requests.get(f'{self.server_url}/games/showPlayers/{game_id}')
         return response.json()
-        
     
     def play_turn(self, player_id):
         response = requests.get(f'{self.server_url}/players/turn/{player_id}')
-        return response.json()['turn']
+        return response.json()['msg']
