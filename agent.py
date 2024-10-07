@@ -10,7 +10,7 @@ class Agent:
         self.server_connection = server_connection
         self.game_id = None
         self.player_id = None
-        self.mountain = {0:0,0:0,0:0}
+        self.mountain = {}
         self.board = Board()
     
     def create_game(self, game_name):
@@ -82,27 +82,36 @@ class Agent:
 
     def _generate_pairs(self, dice):
         # Generar todas las combinaciones posibles de 2 pares de dados
-        combinations = list(itertools.combinations(dice, 2))
-        
-        # Crear una lista con los pares restantes
         pair_sums = []
-        for pair1 in combinations:
-            remaining_dice = [d for d in dice if d not in pair1]
-            pair2 = tuple(remaining_dice)
+
+        # Iterar sobre las combinaciones para generar pares
+        for pair1 in itertools.combinations(dice, 2):
+            # Hacer una copia de los dados para trabajar con ellos
+            remaining_dice = dice[:]
             
+            # Eliminar solo los elementos del primer par, manejando duplicados
+            for die in pair1:
+                remaining_dice.remove(die)
+
+            # Crear el segundo par con los dados restantes
+            pair2 = tuple(remaining_dice)
+
             # Obtener la suma de ambos pares
             sum1 = sum(pair1)
             sum2 = sum(pair2)
-            
+
             # Almacenar los pares y sus sumas
             pair_sums.append(((pair1, pair2), (sum1, sum2)))
-            print("Pares y sumas: ",pair_sums)
-        
+            print("Pares y sumas: ", pair_sums)
+
         # Definir las sumas de mayor prioridad
         preferred_sums = [7, 6, 8]
-        
+
         # Ordenar los pares de dados según las sumas priorizadas
-        sorted_pairs = sorted(pair_sums, key=lambda x: (x[1][0] not in preferred_sums, abs(x[1][0] - 7), x[1][1] not in preferred_sums, abs(x[1][1] - 7)))
+        sorted_pairs = sorted(pair_sums, key=lambda x: (
+            x[1][0] not in preferred_sums, abs(x[1][0] - 7),
+            x[1][1] not in preferred_sums, abs(x[1][1] - 7)
+        ))
 
         # Devolver las sumas de los dos pares
         return [sorted_pairs[0][1]]  # Devolvemos la mejor combinación de pares con sus respectivas sumas
