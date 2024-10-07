@@ -48,3 +48,15 @@ class Board:
         #Imprimir la board
         for row in self.board:
             print(" ".join(row))  # Imprime cada fila unida por espacios
+
+    def mis_columnas_activas(self, columnas_activas):
+        # Crear una lista para almacenar las columnas que tienen 'A' en la fila 12
+        mis_columnas = []
+        
+        # Iterar sobre las columnas activas
+        for columna in columnas_activas:
+            if self.board[12][columna-1] == 'A':  # Verificar si en la fila 12 hay un 'A'
+                mis_columnas.append(columna)  # Si es 'A', agregar la columna a la nueva lista
+
+        # Retornar la nueva lista de columnas activas
+        return mis_columnas

@@ -41,71 +41,86 @@ class Agent:
         # Separar los valores por comas y convertir a enteros
         dice = list(map(int, dice.split(',')))
 
-        # Dividir los dados en dos pares
-        pairs = self._generate_pairs(dice)
-        print(f"Pares de sumas de dados: {pairs}")
-
-        # Obtener las columnas activas actuales (donde el valor es mayor que 0)
+        # Obtener las columnas activas actuales
         columnas_activas = [columna for columna, fila in self.mountain.items() if fila > 0]
         print(f"Columnas activas actuales: {columnas_activas}")
+        
+                # Obtener las columnas activas actuales que son nuestras
+        mis_columnas = self.board.mis_columnas_activas(columnas_activas)
+        print("Mis columnas: ", mis_columnas)
 
-        # Actualizar la montaña con las decisiones del agente
-        for pair in pairs:
-            columna1, columna2 = map(int, pair)  # Convertir cada valor a entero
 
-            # Solo permitir modificar columnas activas si ya hay 3 columnas activas
-            if len(columnas_activas) < 3 or columna1 in columnas_activas:
-                if columna1 not in self.mountain or self.mountain[columna1] == 0:
-                    self.mountain[columna1] = 12
-                    if columna1 not in columnas_activas:  # Agregar a activas si no lo estaba
-                        columnas_activas.append(columna1)
-                else:
+
+        if len(mis_columnas) < 3:
+
+            # Dividir los dados en pares priorizando las sumas según las columnas activas
+            pairs = self._generate_pairs(dice, columnas_activas)
+            print(f"Pares de sumas de dados seleccionados: {pairs}")
+
+            # Actualizar la montaña
+            for pair in pairs:
+                columna1, columna2 = map(int, pair)  # Convertir a entero
+
+                # Verificar y actualizar la montaña según las reglas
+                if len(columnas_activas) < 3 or columna1 in columnas_activas:
+                    if columna1 not in self.mountain or self.mountain[columna1] == 0:
+                        self.mountain[columna1] = 12
+                        if columna1 not in columnas_activas:
+                            columnas_activas.append(columna1)
+
+                if len(columnas_activas) < 3 or columna2 in columnas_activas:
+                    if columna2 not in self.mountain or self.mountain[columna2] == 0:
+                        self.mountain[columna2] = 12
+                        if columna2 not in columnas_activas:
+                            columnas_activas.append(columna2)
+
+            # Enviar actualización al servidor
+            self.board.update_board(self.mountain)
+            self.board.display_board()
+            print("Imprimiendo actualización de la montaña: ", self.mountain)
+            self.server_connection.update_turn(self.player_id, self.mountain)
+        
+        if len(mis_columnas) <= 3:
+                        # Dividir los dados en pares priorizando las sumas según las columnas activas
+            pairs = self._generate_pairs2(dice, mis_columnas)
+            print(f"Pares de sumas de dados seleccionados: {pairs}")
+            for pair in pairs:
+                columna1, columna2 = map(int, pair)  # Convertir a entero
+
+                # Verificar y actualizar la montaña según las reglas
+                if columna1 in mis_columnas:
                     self.mountain[columna1] -= 1
 
-            if len(columnas_activas) < 3 or columna2 in columnas_activas:
-                if columna2 not in self.mountain or self.mountain[columna2] == 0:
-                    self.mountain[columna2] = 12
-                    if columna2 not in columnas_activas:  # Agregar a activas si no lo estaba
-                        columnas_activas.append(columna2)
-                else:
+                if columna2 in mis_columnas:
                     self.mountain[columna2] -= 1
 
-        # Enviar actualización al servidor
-        self.board.update_board(self.mountain)
-        self.board.display_board()
-        print("Imprimiendo actualización de la montaña: ", self.mountain)
-        self.server_connection.update_turn(self.player_id, self.mountain)
+            # Enviar actualización al servidor
+            self.board.update_board(self.mountain)
+            self.board.display_board()
+            print("Imprimiendo actualización de la montaña: ", self.mountain)
+            self.server_connection.update_turn(self.player_id, self.mountain)
 
     def end_turn(self):
         # Finalizar turno y acampar
         self.server_connection.end_turn(self.player_id, self.mountain)
 
-    def _generate_pairs(self, dice):
+    def _generate_pairs(self, dice, columnas_activas):
         # Generar todas las combinaciones posibles de 2 pares de dados
         pair_sums = []
 
-        # Iterar sobre las combinaciones para generar pares
         for pair1 in itertools.combinations(dice, 2):
-            # Hacer una copia de los dados para trabajar con ellos
             remaining_dice = dice[:]
-            
-            # Eliminar solo los elementos del primer par, manejando duplicados
             for die in pair1:
                 remaining_dice.remove(die)
 
-            # Crear el segundo par con los dados restantes
             pair2 = tuple(remaining_dice)
-
-            # Obtener la suma de ambos pares
             sum1 = sum(pair1)
             sum2 = sum(pair2)
-
-            # Almacenar los pares y sus sumas
             pair_sums.append(((pair1, pair2), (sum1, sum2)))
-            print("Pares y sumas: ", pair_sums)
 
-        # Definir las sumas de mayor prioridad
-        preferred_sums = [7, 6, 8]
+        # Definir las sumas de mayor prioridad, excluyendo las columnas activas
+        preferred_sums = [7, 8, 6, 5, 9, 4, 10, 3, 11, 2, 12]
+        preferred_sums = [suma for suma in preferred_sums if suma not in columnas_activas]
 
         # Ordenar los pares de dados según las sumas priorizadas
         sorted_pairs = sorted(pair_sums, key=lambda x: (
@@ -113,8 +128,34 @@ class Agent:
             x[1][1] not in preferred_sums, abs(x[1][1] - 7)
         ))
 
-        # Devolver las sumas de los dos pares
-        return [sorted_pairs[0][1]]  # Devolvemos la mejor combinación de pares con sus respectivas sumas
+        return [sorted_pairs[0][1]]  # Devolvemos la mejor combinación de pares
+
+    def _generate_pairs2(self, dice, preferred_sums):
+        # Generar todas las combinaciones posibles de 2 pares de dados
+        pair_sums = []
+
+        for pair1 in itertools.combinations(dice, 2):
+            remaining_dice = list(dice)  # Crear una copia de la lista de dados
+            for die in pair1:
+                remaining_dice.remove(die)
+
+            pair2 = tuple(remaining_dice)
+            sum1 = sum(pair1)
+            sum2 = sum(pair2)
+            pair_sums.append(((pair1, pair2), (sum1, sum2)))
+
+        # Filtrar las sumas preferidas para excluir las que están en columnas activas
+        # Aquí se asume que 'self.columnas_activas' es una lista de columnas activas
+        preferred_sums = [suma for suma in preferred_sums if suma not in preferred_sums]
+
+        # Ordenar los pares de dados según las sumas priorizadas
+        sorted_pairs = sorted(pair_sums, key=lambda x: (
+            x[1][0] not in preferred_sums, abs(x[1][0] - 7),
+            x[1][1] not in preferred_sums, abs(x[1][1] - 7)
+        ))
+
+        return [sorted_pairs[0][1]]  # Devolvemos la mejor combinación de pares
+
 
     def decide_to_continue_or_stop(self):
         """
