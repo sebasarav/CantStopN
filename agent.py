@@ -2,6 +2,7 @@ import itertools
 import random
 from board import Board
 from server_connection import ServerConnection
+import json
 
 class Agent:
     def __init__(self, player_name, server_connection):
@@ -74,11 +75,6 @@ class Agent:
                         if columna2 not in columnas_activas:
                             columnas_activas.append(columna2)
 
-            # Enviar actualización al servidor
-            self.board.update_board(self.mountain)
-            self.board.display_board()
-            print("Imprimiendo actualización de la montaña: ", self.mountain)
-            self.server_connection.update_turn(self.player_id, self.mountain)
         
         if len(mis_columnas) <= 3:
                         # Dividir los dados en pares priorizando las sumas según las columnas activas
@@ -94,15 +90,20 @@ class Agent:
                 if columna2 in mis_columnas:
                     self.mountain[columna2] -= 1
 
-            # Enviar actualización al servidor
-            self.board.update_board(self.mountain)
-            self.board.display_board()
-            print("Imprimiendo actualización de la montaña: ", self.mountain)
-            self.server_connection.update_turn(self.player_id, self.mountain)
+        # Enviar actualización al servidor
+        self.board.update_board(self.mountain)
+        self.board.display_board()
+        mountain_server = {str(key): value for key, value in self.mountain.items()}
+        mountain_json = json.dumps(mountain_server)
+        print("Montaña JSON: ",  mountain_json)
+        print("Imprimiendo actualización de la montaña: ", self.mountain)
+        self.server_connection.update_turn(self.player_id, mountain_json)
 
     def end_turn(self):
+        mountain_server = {str(key): value for key, value in self.mountain.items()}
+        mountain_json = json.dumps(mountain_server)
         # Finalizar turno y acampar
-        self.server_connection.end_turn(self.player_id, self.mountain)
+        self.server_connection.end_turn(self.player_id, mountain_json)
 
     def _generate_pairs(self, dice, columnas_activas):
         # Generar todas las combinaciones posibles de 2 pares de dados
@@ -158,6 +159,20 @@ class Agent:
 
 
     def decide_to_continue_or_stop(self):
+        top = {
+            2: 11,  
+            3: 9,  
+            4: 7,   
+            5: 5,   
+            6: 3,   
+            7: 1,   
+            8: 3,   
+            9: 5,   
+            10: 7,  
+            11: 9,  
+            12: 11  
+        }
+        
         """
         Decisión estratégica basada en el progreso, probabilidades y riesgo.
         """
@@ -173,7 +188,7 @@ class Agent:
         puntaje_riesgo = sum(self.mountain[columna] for columna in columnas_activas)
 
         # Umbral de riesgo para decidir detenerse
-        umbral_riesgo = 6  # Ajusta este valor según la estrategia que prefieras
+        umbral_riesgo = 7  # Ajusta este valor según la estrategia que prefieras
 
         # Si el puntaje de riesgo supera el umbral, detenerse para conservar el progreso
         if puntaje_riesgo >= umbral_riesgo:
@@ -181,7 +196,7 @@ class Agent:
             return False
 
         # Basarse en la proximidad a la cima para decidir
-        distancia_a_la_cima = [10 - self.mountain[columna] for columna in columnas_activas]  # Suponiendo que 10 es la cima
+        distancia_a_la_cima = [top[columna] - self.mountain[columna] for columna in columnas_activas]  # Suponiendo que 10 es la cima
         if any(distancia < 3 for distancia in distancia_a_la_cima):
             print("Estoy cerca de la cima en una columna. Continuaré escalando.")
             return True
@@ -189,7 +204,4 @@ class Agent:
         # Si todas las demás estrategias fallan, detenerse para no perder el progreso
         print("Evaluación completa: Detenerse para evitar riesgos adicionales.")
         return False
-    
-    def end_turn(self):
-        self.server_connection.end_turn(self.player_id, self.mountain)
         

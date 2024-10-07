@@ -96,7 +96,6 @@ class GameManager:
                     print("Esperando mi turno...")
                     time.sleep(10)
             else:
-                # Verificar el estado del juego antes de mostrar el menú
                 self.check_game_status()
                 if self.game_status:
                     print("La partida ha comenzado, pasando al juego.")
