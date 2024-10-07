@@ -87,11 +87,11 @@ class GameManager:
                 if response == "Es su turno":
                     print("Mi turno")
                     self.agent.play_turn()
-                    time.sleep(10)
+                    time.sleep(0.5)
                     response = self.agent.decide_to_continue_or_stop()
                     if response == False:
                         self.agent.end_turn()
-                        time.sleep(10)
+                        time.sleep(0.5)
                 else:
                     print("Esperando mi turno...")
                     time.sleep(10)

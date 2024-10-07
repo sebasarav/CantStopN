@@ -187,8 +187,9 @@ class Agent:
         # Calcular un puntaje de riesgo basado en la posición de las columnas activas
         puntaje_riesgo = sum(self.mountain[columna] for columna in columnas_activas)
 
-        # Umbral de riesgo para decidir detenerse
-        umbral_riesgo = 7  # Ajusta este valor según la estrategia que prefieras
+        # Umbral de riesgo dinámico basado en el progreso y la proximidad a la cima
+        umbral_riesgo_base = 20  # Umbral base ajustable
+        umbral_riesgo = umbral_riesgo_base + 2 * len([d for d in columnas_activas if (top[d] - self.mountain[d]) <= 2])
 
         # Si el puntaje de riesgo supera el umbral, detenerse para conservar el progreso
         if puntaje_riesgo >= umbral_riesgo:
@@ -196,7 +197,7 @@ class Agent:
             return False
 
         # Basarse en la proximidad a la cima para decidir
-        distancia_a_la_cima = [top[columna] - self.mountain[columna] for columna in columnas_activas]  # Suponiendo que 10 es la cima
+        distancia_a_la_cima = [top[columna] - self.mountain[columna] for columna in columnas_activas]
         if any(distancia < 3 for distancia in distancia_a_la_cima):
             print("Estoy cerca de la cima en una columna. Continuaré escalando.")
             return True
