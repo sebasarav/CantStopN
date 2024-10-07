@@ -19,7 +19,9 @@ class ServerConnection:
         return response.json()['dice']
 
     def update_turn(self, player_id, mountain):
-        requests.post(f'{self.server_url}/players/duringTurn/{player_id}', data={"mountain": mountain})
+        response = requests.post(f'{self.server_url}/players/duringTurn/{player_id}', data={"mountain": mountain})
+        print(response.text)
+        
 
     def end_turn(self, player_id, mountain):
         requests.post(f'{self.server_url}/players/endTurn/{player_id}', data={"mountain": mountain})

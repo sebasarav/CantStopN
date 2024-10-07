@@ -16,7 +16,7 @@ class GameManager:
         print("5. Exit")
     
     def create_party(self):
-        game_name = input("Write a game name:")
+        game_name = input("Write a game name: ")
         self.agent.create_game(game_name)
     
     def join_party(self):
@@ -27,10 +27,27 @@ class GameManager:
         for party in parties:
             print(f"{party['id']:<10} {party['name']:<20}")
         
-        
         game_id = int(input("Select id: "))
         self.agent.join_game(game_id)
         
+        # Verificar el estado del juego
+        self.check_game_status()
+
+        if not self.game_status:
+            print("La partida aún no ha comenzado. Puedes iniciar la partida cuando estés listo.")
+            self.start_game_if_desired()  # Preguntar al jugador si desea iniciar la partida
+        else:
+            print("La partida ha comenzado.")
+            self.run_game()  # Llama a run_game si el juego ha comenzado
+
+    def check_game_status(self):
+        try:
+            response = self.agent.is_turn()
+            if response == "Es su turno":
+                self.game_status = True
+        except Exception as e:
+            print("La partida no ha iniciado.")
+
     def players_in_party(self):
         players = self.agent.players_in_my_party()
         
@@ -48,27 +65,44 @@ class GameManager:
         self.agent.start_game()
         self.game_status = True
     
+    def start_game_if_desired(self):
+        # Preguntar al jugador si quiere iniciar la partida
+        start_game = input("¿Quieres iniciar la partida? (s/n): ")
+        if start_game.lower() == 's':
+            self.start_party()
+            self.run_game()  # Iniciar el bucle de juego después de iniciar la partida
+
     def run_game(self):
         options = {
-            '1' : self.create_party,
-            '2' : self.join_party,
-            '3' : self.start_party,
-            '4' : self.players_in_party
+            '1': self.create_party,
+            '2': self.join_party,
+            '3': self.start_party,
+            '4': self.players_in_party
         }
+        
         while True:
             if self.game_status:
-                print("The party is comming")
-                while True:
-                    response = self.agent.is_turn()
-                    if response == "Es su turno":
-                        print("My turn")
-                        self.agent.play_turn()
+                print("La partida está en marcha")
+                response = self.agent.is_turn()
+                if response == "Es su turno":
+                    print("Mi turno")
+                    self.agent.play_turn()
+                    time.sleep(10)
+                    response = self.agent.decide_to_continue_or_stop()
+                    if response == False:
+                        self.agent.end_turn()
                         time.sleep(10)
-                        self.agent.decide_to_continue_or_stop()
-                        time.sleep(10)
-
-            self.show_menu()
-            choice = input("Select an option: ")
-            if choice in options:
-                options[choice]()
-
+                else:
+                    print("Esperando mi turno...")
+                    time.sleep(10)
+            else:
+                # Verificar el estado del juego antes de mostrar el menú
+                self.check_game_status()
+                if self.game_status:
+                    print("La partida ha comenzado, pasando al juego.")
+                    self.run_game()  # Iniciar el juego si ha comenzado
+                else:
+                    self.show_menu()
+                    choice = input("Select an option: ")
+                    if choice in options:
+                        options[choice]()

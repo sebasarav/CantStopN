@@ -118,25 +118,37 @@ class Agent:
 
     def decide_to_continue_or_stop(self):
         """
-        Decisión estratégica basada en el progreso y las probabilidades.
+        Decisión estratégica basada en el progreso, probabilidades y riesgo.
         """
-        # Estrategia 1: Si hay menos de 3 columnas activas en la montaña, continuar.
+        # Calcula las columnas activas donde ya hay progreso
         columnas_activas = [columna for columna, fila in self.mountain.items() if fila > 0]
-        
+
+        # Si tenemos menos de 3 columnas activas, siempre es mejor continuar.
         if len(columnas_activas) < 3:
             print(f"No hay suficientes columnas activas ({len(columnas_activas)} activas). Continuaré.")
             return True
-        
-        # Estrategia 2: Basado en el progreso acumulado. Si he avanzado suficiente, detenerme.
-        if all(self.mountain[columna] >= 2 for columna in columnas_activas):
-            print("He avanzado lo suficiente en las columnas activas. Acamparé para no arriesgarme.")
+
+        # Calcular un puntaje de riesgo basado en la posición de las columnas activas
+        puntaje_riesgo = sum(self.mountain[columna] for columna in columnas_activas)
+
+        # Umbral de riesgo para decidir detenerse
+        umbral_riesgo = 6  # Ajusta este valor según la estrategia que prefieras
+
+        # Si el puntaje de riesgo supera el umbral, detenerse para conservar el progreso
+        if puntaje_riesgo >= umbral_riesgo:
+            print(f"El puntaje de riesgo es alto ({puntaje_riesgo}). Acamparé para no arriesgarme.")
             return False
-        
-        # Estrategia 3: Si hay posibilidades de avanzar en las columnas activas, continuar.
-        if all(self.mountain[columna] < 2 for columna in columnas_activas):
-            print("No he avanzado lo suficiente en las columnas activas. Seguiremos escalando.")
+
+        # Basarse en la proximidad a la cima para decidir
+        distancia_a_la_cima = [10 - self.mountain[columna] for columna in columnas_activas]  # Suponiendo que 10 es la cima
+        if any(distancia < 3 for distancia in distancia_a_la_cima):
+            print("Estoy cerca de la cima en una columna. Continuaré escalando.")
             return True
 
-        # Si no hay más posibilidades de avanzar, detenerse.
-        print("No hay posibilidades de avanzar. Voy a detenerme.")
+        # Si todas las demás estrategias fallan, detenerse para no perder el progreso
+        print("Evaluación completa: Detenerse para evitar riesgos adicionales.")
         return False
+    
+    def end_turn(self):
+        self.server_connection.end_turn(self.player_id, self.mountain)
+        
