@@ -201,10 +201,15 @@ class Agent:
         puntaje_riesgo = sum(self.mountain[columna] for columna in mis_columnas)
 
         # Umbral de riesgo dinámico basado en el progreso y la proximidad a la cima
-        umbral_riesgo_base = 6  # Umbral base ajustable
+        umbral_riesgo_base = 30  # Umbral base ajustable
         umbral_riesgo = umbral_riesgo_base + 2 * len([d for d in mis_columnas if (self.top[d] - self.mountain[d]) <= 2])
 
         repeit_numbers = any(number in mis_columnas for pair in self.pairs for number in pair)
+        
+        if len(columnas_conquistadas) == 3:
+                print("Hemos conquistado las sumas")
+                print("Falta finalizar el juego de parte del servidor")
+                return 3
         
         if repeit_numbers:
             # Si el puntaje de riesgo supera el umbral, detenerse para conservar el progreso
@@ -217,12 +222,6 @@ class Agent:
             if any(distancia < 3 for distancia in distancia_a_la_cima):
                 print("Estoy cerca de la cima en una columna. Continuaré escalando.")
                 return True
-            
-            # Si tenemos menos de 3 columnas activas, siempre es mejor continuar.
-            if len(columnas_conquistadas) == 3:
-                print("Hemos conquistado las sumas")
-                print("Falta finalizar el juego de parte del servidor")
-                return 3
             
         else:
             self.mountain = {}
