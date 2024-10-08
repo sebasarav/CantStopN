@@ -222,7 +222,7 @@ class Agent:
             if len(columnas_conquistadas) == 3:
                 print("Hemos conquistado las sumas")
                 print("Falta finalizar el juego de parte del servidor")
-                return False
+                return 3
             
         else:
             self.mountain = {}

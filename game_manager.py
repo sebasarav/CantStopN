@@ -89,6 +89,9 @@ class GameManager:
                     self.agent.play_turn()
                     time.sleep(0.5)
                     response = self.agent.decide_to_continue_or_stop()
+                    if response == 3:
+                        print("Cimas conquistadas")
+                        break
                     if response == False:
                         self.agent.end_turn()
                         time.sleep(0.5)
