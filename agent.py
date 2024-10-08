@@ -14,6 +14,20 @@ class Agent:
         self.mountain = {}
         self.board = Board()
         self.pairs = []
+        self.top = {
+            2: 11,  
+            3: 9,  
+            4: 7,   
+            5: 5,   
+            6: 3,   
+            7: 1,   
+            8: 3,   
+            9: 5,   
+            10: 7,  
+            11: 9,  
+            12: 11  
+        }
+
     
     def create_game(self, game_name):
         self.game_name = game_name
@@ -51,8 +65,6 @@ class Agent:
         mis_columnas = self.board.mis_columnas_activas(columnas_activas)
         print("Mis columnas: ", mis_columnas)
 
-
-
         if len(mis_columnas) < 3:
 
             # Dividir los dados en pares priorizando las sumas según las columnas activas
@@ -78,18 +90,25 @@ class Agent:
 
         
         if len(mis_columnas) == 3:
-                        # Dividir los dados en pares priorizando las sumas según las columnas activas
+            # Dividir los dados en pares priorizando las sumas según las columnas activas
+            columnas_conquistadas = self.board.buscar_top(self.top)
+
             pairs = self._generate_pairs2(dice, mis_columnas)
             print(f"Pares de sumas de dados seleccionados: {pairs}")
+            
             for pair in pairs:
                 columna1, columna2 = map(int, pair)  # Convertir a entero
 
-                # Verificar y actualizar la montaña según las reglas
-                if columna1 in mis_columnas:
-                    self.mountain[columna1] -= 1
+                # Verificar que columna1 no esté en ninguna de las columnas conquistadas
+                if columna1 not in columnas_conquistadas:
+                    if columna1 in mis_columnas:
+                        self.mountain[columna1] -= 1
 
-                if columna2 in mis_columnas:
-                    self.mountain[columna2] -= 1
+                # Verificar que columna2 no esté en ninguna de las columnas conquistadas
+                if columna2 not in columnas_conquistadas:
+                    if columna2 in mis_columnas:
+                        self.mountain[columna2] -= 1
+
 
         # Enviar actualización al servidor
         self.board.update_board(self.mountain)
@@ -135,6 +154,7 @@ class Agent:
 
     def _generate_pairs2(self, dice, preferred_sums):
         # Generar todas las combinaciones posibles de 2 pares de dados
+        columnas_conquistadas = self.board.buscar_top(self.top)
         pair_sums = []
 
         for pair1 in itertools.combinations(dice, 2):
@@ -147,33 +167,22 @@ class Agent:
             sum2 = sum(pair2)
             pair_sums.append(((pair1, pair2), (sum1, sum2)))
 
-        # Filtrar las sumas preferidas para excluir las que están en columnas activas
-        # Aquí se asume que 'self.columnas_activas' es una lista de columnas activas
-        preferred_sums = [suma for suma in preferred_sums if suma not in preferred_sums]
+        # Filtrar las sumas preferidas para excluir las que están en columnas conquistadas
+        preferred_sums = [suma for suma in preferred_sums if suma not in columnas_conquistadas]
 
         # Ordenar los pares de dados según las sumas priorizadas
         sorted_pairs = sorted(pair_sums, key=lambda x: (
             x[1][0] not in preferred_sums, abs(x[1][0] - 7),
             x[1][1] not in preferred_sums, abs(x[1][1] - 7)
         ))
+        
+        # Guardar y devolver el mejor par de sumas
         self.pairs = [sorted_pairs[0][1]]
-        return [sorted_pairs[0][1]]  # Devolvemos la mejor combinación de pares
+        return [sorted_pairs[0][1]]  # Devolver la mejor combinación de pares
+
 
 
     def decide_to_continue_or_stop(self):
-        top = {
-            2: 11,  
-            3: 9,  
-            4: 7,   
-            5: 5,   
-            6: 3,   
-            7: 1,   
-            8: 3,   
-            9: 5,   
-            10: 7,  
-            11: 9,  
-            12: 11  
-        }
         
         """
         Decisión estratégica basada en el progreso, probabilidades y riesgo.
@@ -181,6 +190,7 @@ class Agent:
         # Calcula las columnas activas donde ya hay progreso
         columnas_activas = [columna for columna, fila in self.mountain.items() if fila > 0]
         mis_columnas = self.board.mis_columnas_activas(columnas_activas)
+        columnas_conquistadas = self.board.buscar_top(self.top)
 
         # Si tenemos menos de 3 columnas activas, siempre es mejor continuar.
         if len(mis_columnas) < 3:
@@ -192,7 +202,7 @@ class Agent:
 
         # Umbral de riesgo dinámico basado en el progreso y la proximidad a la cima
         umbral_riesgo_base = 6  # Umbral base ajustable
-        umbral_riesgo = umbral_riesgo_base + 2 * len([d for d in mis_columnas if (top[d] - self.mountain[d]) <= 2])
+        umbral_riesgo = umbral_riesgo_base + 2 * len([d for d in mis_columnas if (self.top[d] - self.mountain[d]) <= 2])
 
         repeit_numbers = any(number in mis_columnas for pair in self.pairs for number in pair)
         
@@ -203,10 +213,17 @@ class Agent:
                 return False
 
             # Basarse en la proximidad a la cima para decidir
-            distancia_a_la_cima = [top[columna] - self.mountain[columna] for columna in mis_columnas]
+            distancia_a_la_cima = [self.top[columna] - self.mountain[columna] for columna in mis_columnas]
             if any(distancia < 3 for distancia in distancia_a_la_cima):
                 print("Estoy cerca de la cima en una columna. Continuaré escalando.")
                 return True
+            
+            # Si tenemos menos de 3 columnas activas, siempre es mejor continuar.
+            if len(columnas_conquistadas) == 3:
+                print("Hemos conquistado las sumas")
+                print("Falta finalizar el juego de parte del servidor")
+                return False
+            
         else:
             self.mountain = {}
             self.board.__init__()

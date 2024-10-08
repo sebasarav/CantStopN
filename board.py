@@ -59,3 +59,14 @@ class Board:
 
         # Retornar la nueva lista de columnas activas
         return mis_columnas
+    
+    def buscar_top(self, top):
+        columnas_con_A_en_top = []
+
+        # Recorrer el diccionario self.top que tiene las columnas y las filas correspondientes al "top"
+        for columna, fila in top.items():
+            # Comprobar si en esa celda específica hay una 'A'
+            if self.board[fila, columna-1] == 'A':  # Recuerda que las columnas están indexadas desde 1
+                columnas_con_A_en_top.append(columna)  # Agregar la columna a la lista si tiene 'A'
+        print("Mis columnas conquistadas: ", columnas_con_A_en_top)
+        return columnas_con_A_en_top
