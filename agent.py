@@ -13,6 +13,7 @@ class Agent:
         self.player_id = None
         self.mountain = {}
         self.board = Board()
+        self.pairs = []
     
     def create_game(self, game_name):
         self.game_name = game_name
@@ -76,7 +77,7 @@ class Agent:
                             columnas_activas.append(columna2)
 
         
-        if len(mis_columnas) <= 3:
+        if len(mis_columnas) == 3:
                         # Dividir los dados en pares priorizando las sumas según las columnas activas
             pairs = self._generate_pairs2(dice, mis_columnas)
             print(f"Pares de sumas de dados seleccionados: {pairs}")
@@ -129,7 +130,7 @@ class Agent:
             x[1][0] not in preferred_sums, abs(x[1][0] - 7),
             x[1][1] not in preferred_sums, abs(x[1][1] - 7)
         ))
-
+        self.pairs = [sorted_pairs[0][1]]
         return [sorted_pairs[0][1]]  # Devolvemos la mejor combinación de pares
 
     def _generate_pairs2(self, dice, preferred_sums):
@@ -155,7 +156,7 @@ class Agent:
             x[1][0] not in preferred_sums, abs(x[1][0] - 7),
             x[1][1] not in preferred_sums, abs(x[1][1] - 7)
         ))
-
+        self.pairs = [sorted_pairs[0][1]]
         return [sorted_pairs[0][1]]  # Devolvemos la mejor combinación de pares
 
 
@@ -179,33 +180,42 @@ class Agent:
         """
         # Calcula las columnas activas donde ya hay progreso
         columnas_activas = [columna for columna, fila in self.mountain.items() if fila > 0]
+        mis_columnas = self.board.mis_columnas_activas(columnas_activas)
 
         # Si tenemos menos de 3 columnas activas, siempre es mejor continuar.
-        if len(columnas_activas) < 3:
-            print(f"No hay suficientes columnas activas ({len(columnas_activas)} activas). Continuaré.")
+        if len(mis_columnas) < 3:
+            print(f"No hay suficientes columnas activas ({len(mis_columnas)} activas). Continuaré.")
             return True
 
         # Calcular un puntaje de riesgo basado en la posición de las columnas activas
-        puntaje_riesgo = sum(self.mountain[columna] for columna in columnas_activas)
+        puntaje_riesgo = sum(self.mountain[columna] for columna in mis_columnas)
 
         # Umbral de riesgo dinámico basado en el progreso y la proximidad a la cima
-        umbral_riesgo_base = 20  # Umbral base ajustable
-        umbral_riesgo = umbral_riesgo_base + 2 * len([d for d in columnas_activas if (top[d] - self.mountain[d]) <= 2])
+        umbral_riesgo_base = 6  # Umbral base ajustable
+        umbral_riesgo = umbral_riesgo_base + 2 * len([d for d in mis_columnas if (top[d] - self.mountain[d]) <= 2])
 
-        # Si el puntaje de riesgo supera el umbral, detenerse para conservar el progreso
-        if puntaje_riesgo >= umbral_riesgo:
-            print(f"El puntaje de riesgo es alto ({puntaje_riesgo}). Acamparé para no arriesgarme.")
+        repeit_numbers = any(number in mis_columnas for pair in self.pairs for number in pair)
+        
+        if repeit_numbers:
+            # Si el puntaje de riesgo supera el umbral, detenerse para conservar el progreso
+            if puntaje_riesgo >= umbral_riesgo:
+                print(f"El puntaje de riesgo es alto ({puntaje_riesgo}). Acamparé para no arriesgarme.")
+                return False
+
+            # Basarse en la proximidad a la cima para decidir
+            distancia_a_la_cima = [top[columna] - self.mountain[columna] for columna in mis_columnas]
+            if any(distancia < 3 for distancia in distancia_a_la_cima):
+                print("Estoy cerca de la cima en una columna. Continuaré escalando.")
+                return True
+        else:
+            self.mountain = {}
+            self.board.__init__()
+            #self.server_connection.update_turn(self.player_id, self.mountain)
+            # Si todas las demás estrategias fallan, detenerse para no perder el progreso
+            print("Escaladores cayendo")
+            print("Sus pares",self.pairs )
+            print("Mis columnas",mis_columnas )
             return False
-
-        # Basarse en la proximidad a la cima para decidir
-        distancia_a_la_cima = [top[columna] - self.mountain[columna] for columna in columnas_activas]
-        if any(distancia < 3 for distancia in distancia_a_la_cima):
-            print("Estoy cerca de la cima en una columna. Continuaré escalando.")
-            return True
-
-        # Si todas las demás estrategias fallan, detenerse para no perder el progreso
-        print("Evaluación completa: Detenerse para evitar riesgos adicionales.")
-        return False
     
     def revert_list(self, mountain):
         # Definir el mapeo de las filas
