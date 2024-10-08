@@ -14,6 +14,7 @@ class Agent:
         self.mountain = {}
         self.board = Board()
         self.pairs = []
+        self.mis_campamentos = {}
         self.top = {
             2: 11,  
             3: 9,  
@@ -183,11 +184,10 @@ class Agent:
 
 
     def decide_to_continue_or_stop(self):
-        
         """
         Decisión estratégica basada en el progreso, probabilidades y riesgo.
         """
-        # Calcula las columnas activas donde ya hay progreso
+        # Calcular las columnas activas donde ya hay progreso
         columnas_activas = [columna for columna, fila in self.mountain.items() if fila > 0]
         mis_columnas = self.board.mis_columnas_activas(columnas_activas)
         columnas_conquistadas = self.board.buscar_top(self.top)
@@ -201,20 +201,23 @@ class Agent:
         puntaje_riesgo = sum(self.mountain[columna] for columna in mis_columnas)
 
         # Umbral de riesgo dinámico basado en el progreso y la proximidad a la cima
-        umbral_riesgo_base = 30  # Umbral base ajustable
+        umbral_riesgo_base = 20  # Umbral base ajustable
         umbral_riesgo = umbral_riesgo_base + 2 * len([d for d in mis_columnas if (self.top[d] - self.mountain[d]) <= 2])
 
         repeit_numbers = any(number in mis_columnas for pair in self.pairs for number in pair)
-        
+
         if len(columnas_conquistadas) == 3:
-                print("Hemos conquistado las sumas")
-                print("Falta finalizar el juego de parte del servidor")
-                return 3
-        
+            print("Hemos conquistado las sumas")
+            print("Falta finalizar el juego de parte del servidor")
+            return 3
+
         if repeit_numbers:
             # Si el puntaje de riesgo supera el umbral, detenerse para conservar el progreso
             if puntaje_riesgo >= umbral_riesgo:
                 print(f"El puntaje de riesgo es alto ({puntaje_riesgo}). Acamparé para no arriesgarme.")
+                # Solo aquí actualizamos mis_campamentos al decidir detenerse (acampar)
+                self.mis_campamentos = self.mountain.copy()  # Guardar el estado actual de la montaña
+                print("Progreso guardado en mis campamentos:", self.mis_campamentos)
                 return False
 
             # Basarse en la proximidad a la cima para decidir
@@ -222,16 +225,19 @@ class Agent:
             if any(distancia < 3 for distancia in distancia_a_la_cima):
                 print("Estoy cerca de la cima en una columna. Continuaré escalando.")
                 return True
-            
         else:
-            self.mountain = {}
-            self.board.__init__()
-            #self.server_connection.update_turn(self.player_id, self.mountain)
-            # Si todas las demás estrategias fallan, detenerse para no perder el progreso
-            print("Escaladores cayendo")
-            print("Sus pares",self.pairs )
-            print("Mis columnas",mis_columnas )
+            # **Verificar si alguna columna en mountain ha llegado al top antes de restaurar**
+            for columna, fila in self.mountain.items():
+                if fila == self.top[columna]:  # Si la columna está en el top
+                    # Actualizar mis_campamentos para reflejar que esa columna está en el top
+                    self.mis_campamentos[columna] = fila
+                    print(f"Columna {columna} alcanzó el top. Actualizando mis campamentos.")
+
+            # Si los escaladores caen, restauramos la montaña al último estado guardado en mis_campamentos
+            self.mountain = self.mis_campamentos.copy()
+            print("Escaladores cayendo. Restaurando montaña a último punto guardado:", self.mountain)
             return False
+
     
     def revert_list(self, mountain):
         # Definir el mapeo de las filas
