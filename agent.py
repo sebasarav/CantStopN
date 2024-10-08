@@ -93,7 +93,8 @@ class Agent:
         # Enviar actualización al servidor
         self.board.update_board(self.mountain)
         self.board.display_board()
-        mountain_server = {str(key): value for key, value in self.mountain.items()}
+        new_mountain = self.revert_list(self.mountain)
+        mountain_server = {str(key): value for key, value in new_mountain.items()}
         mountain_json = json.dumps(mountain_server)
         print("Montaña JSON: ",  mountain_json)
         print("Imprimiendo actualización de la montaña: ", self.mountain)
@@ -205,4 +206,15 @@ class Agent:
         # Si todas las demás estrategias fallan, detenerse para no perder el progreso
         print("Evaluación completa: Detenerse para evitar riesgos adicionales.")
         return False
+    
+    def revert_list(self, mountain):
+        # Definir el mapeo de las filas
+        row_map = {
+            12: 1, 11: 2, 10: 3, 9: 4, 8: 5, 7: 6,
+            6: 7, 5: 8, 4: 9, 3: 10, 2: 11, 1: 12
+        }
         
+        # Crear una nueva montaña con las filas modificadas según el mapeo
+        new_mountain = {columna: row_map[fila] for columna, fila in mountain.items()}
+
+        return new_mountain

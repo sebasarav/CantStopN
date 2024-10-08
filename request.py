@@ -50,7 +50,7 @@ response = requests.post(f'http://3.216.217.128:5000/players/endTurn/{player_id}
 print(response.text)"""
 
 #Eliminar jugador
-player_id = 1401  # Reemplaza con el ID del jugador que quieres eliminar
+player_id = 1546  # Reemplaza con el ID del jugador que quieres eliminar
 response = requests.delete(f'http://3.216.217.128:5000/players/{player_id}')
 print(response.text)
 

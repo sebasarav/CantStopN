@@ -18,7 +18,6 @@ class Board:
         self.board[8][middle + 4] = '11'
         self.board[10][middle - 5] = '2'
         self.board[10][middle + 5] = '12'
-
         for i in range(row):
             for j in range(column):
                 if self.board[i][j].isdigit():
