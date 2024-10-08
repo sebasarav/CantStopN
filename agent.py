@@ -79,13 +79,13 @@ class Agent:
                 # Verificar y actualizar la montaña según las reglas
                 if len(columnas_activas) < 3 or columna1 in columnas_activas:
                     if columna1 not in self.mountain or self.mountain[columna1] == 0:
-                        self.mountain[columna1] = 12
+                        self.mountain[columna1] = 13
                         if columna1 not in columnas_activas:
                             columnas_activas.append(columna1)
 
                 if len(columnas_activas) < 3 or columna2 in columnas_activas:
                     if columna2 not in self.mountain or self.mountain[columna2] == 0:
-                        self.mountain[columna2] = 12
+                        self.mountain[columna2] = 13
                         if columna2 not in columnas_activas:
                             columnas_activas.append(columna2)
 
@@ -242,8 +242,8 @@ class Agent:
     def revert_list(self, mountain):
         # Definir el mapeo de las filas
         row_map = {
-            12: 1, 11: 2, 10: 3, 9: 4, 8: 5, 7: 6,
-            6: 7, 5: 8, 4: 9, 3: 10, 2: 11, 1: 12
+            13: 1, 12: 2, 11: 3, 10: 4, 9: 5, 8: 6,
+            7: 7, 6: 8, 5: 9, 4: 10, 3: 11, 2: 12, 1: 13
         }
         
         # Crear una nueva montaña con las filas modificadas según el mapeo

@@ -2,11 +2,13 @@ import numpy as np
 
 class Board:
     def __init__(self):
-        self.board = np.full((13, 13),"N",object)
+        # Cambiar el tamaño de la matriz a 14 filas y 13 columnas
+        self.board = np.full((14, 13),"N",object)
 
         row, column = self.board.shape
         middle = column // 2
 
+        # Actualizar las posiciones según el nuevo tamaño
         self.board[0][middle] = '7'
         self.board[2][middle - 1] = '6'
         self.board[2][middle + 1] = '8'
@@ -18,12 +20,16 @@ class Board:
         self.board[8][middle + 4] = '11'
         self.board[10][middle - 5] = '2'
         self.board[10][middle + 5] = '12'
+        
+        # Rellenar las columnas con 'V' debajo de cada número
         for i in range(row):
             for j in range(column):
                 if self.board[i][j].isdigit():
                     num_col = j
                     for k in range(i, row):
                         self.board[k, num_col] = 'V'
+
+        # Reasignar los números una vez más después de modificar la columna
         self.board[0][middle] = '7'
         self.board[2][middle - 1] = '6'
         self.board[2][middle + 1] = '8'
@@ -44,17 +50,17 @@ class Board:
             self.board[position_int, column_int-1] = 'A'  # 'A' representa el escalador en esa posición
 
     def display_board(self):
-        #Imprimir la board
+        # Imprimir la board
         for row in self.board:
             print(" ".join(row))  # Imprime cada fila unida por espacios
 
     def mis_columnas_activas(self, columnas_activas):
-        # Crear una lista para almacenar las columnas que tienen 'A' en la fila 12
+        # Crear una lista para almacenar las columnas que tienen 'A' en la fila 13
         mis_columnas = []
         
         # Iterar sobre las columnas activas
         for columna in columnas_activas:
-            if self.board[12][columna-1] == 'A':  # Verificar si en la fila 12 hay un 'A'
+            if self.board[13][columna-1] == 'A':  # Verificar si en la fila 13 hay un 'A'
                 mis_columnas.append(columna)  # Si es 'A', agregar la columna a la nueva lista
 
         # Retornar la nueva lista de columnas activas
